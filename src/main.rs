@@ -1,4 +1,16 @@
+/// Adds one to the number given.
+///
+/// # Examples
+///
+/// ```
+/// let x = add(1, 2);
+///
+/// ```
+
+fn add(a: i32, b: i32) -> i32 {
+    return a + b;
+}
+   
 fn main() {
-    let a = [1, 2, 3, 4, 5];
-    let b = ["January","February","March"];
+    println!("{}",add(2,3));
 }

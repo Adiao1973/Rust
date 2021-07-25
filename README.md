@@ -235,3 +235,55 @@ a[0] = 123; // 错误：数组a不可变
 let mut a = [1, 2, 3];
 a[0] = 4; // 正确
 ```
+
+## Rust注释
+
+Rust中的注释方式与其它语言（C、Java）一样，支持两种注释方式：
+
+```rust
+// 这是第一种注释方式
+
+/* 这是第二种注释方式 */
+
+/*
+ * 多行注释
+ * 多行注释
+ * 多行注释
+ */
+```
+
+## 用于说明文档的注释
+
+在Rust中使用`//`可以使其之后到第一个换行符的内容变成注释。  
+在这种规则下，三个反斜杠`///`依然是合法的注释开始。所以Rust可以用`///`作为说明文档注释的开头：
+
+```rust
+/// Adds one to the number given.
+/// 
+/// # Examples
+/// 
+/// ```
+/// let x = add(1, 2);
+/// 
+/// ```
+
+fn add(a: i32,b: i32) -> i32 {
+    return a + b;
+}
+
+fn main(){
+    println！("{}",add(2,3));
+}
+```
+
+运行`cargo doc`会生成这个文档注释的HTML文档。  
+
+![HTML文档](README_files/1.jpg)
+
+运行`cargo doc --open`会构建当前crate文档的HTML并在浏览器中打开。
+
+![HTML浏览器](README_files/2.jpg)
+
+运行`cargo test`将会对注释文档中的示例代码进行测试
+
+![测试](README_files/3.jpg)
