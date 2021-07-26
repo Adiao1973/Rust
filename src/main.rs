@@ -1,16 +1,8 @@
-/// Adds one to the number given.
-///
-/// # Examples
-///
-/// ```
-/// let x = add(1, 2);
-///
-/// ```
-
-fn add(a: i32, b: i32) -> i32 {
-    return a + b;
+fn main(){
+    println!("Hello, world!");
+    another_function();
 }
-   
-fn main() {
-    println!("{}",add(2,3));
+
+fn another_function(){
+    println!("Hello， runoob！");
 }
