@@ -478,3 +478,133 @@ fn main(){
 
 **注意：**两个函数体表达式的类型必须一样！且必须有一个else及其后面的表达式块。
 
+## Rust循环
+
+### while循环
+
+while循环是最典型的条件语句循环：
+
+```rust
+fn main(){
+    let mut number = 1;
+    while number != 4 {
+        println!("{}", number);
+        number += 1;
+    }
+    println!("EXIT");
+}
+```
+
+运行结果：
+> 1  
+2  
+3  
+EXIT
+
+Rust语言到今日还没有do-while的用法，但是do被规定为保留字，也许以后的版本中会用到。  
+在C语言中for循环使用三元语句控制循环，但是Rust中没有这种用法，需要用while循环来替代：
+
+> c语言
+
+```c
+int i;
+for (i = 0; i < 10; i++){
+    // 循环体
+}
+```
+
+> Rust
+
+```rust
+let mut i = 0;
+while i < 10 {
+    // 循环体
+    i += 1;
+}
+```
+
+### for循环
+
+for循环是最常用的循环结构，常用来遍历一个线性数据结构（比如数组）。for循环遍历数组：
+
+```rust
+fn main(){
+    let a = [10, 20, 30, 40, 50];
+    for i in a.iter(){
+        println!("值为：{}", i);
+    }
+}
+```
+
+运行结果：
+
+> 值为：10  
+值为：20  
+值为：30  
+值为：40  
+值为：50
+
+这个程序中的`for`循环完成了对数组a的遍历。`a.iter()`代表`a`的迭代器（iterator）  
+for循环其实是可以通过下标来访问数组的：
+
+```rust
+fn main(){
+    let a = [10, 20, 30, 40, 50];
+    for i in 0..5 {
+        println!("a[{0}] = {1}", i, a[i]);
+    }
+}
+```
+
+运行结果：
+> a[0] = 10  
+a[1] = 20  
+a[2] = 30  
+a[3] = 40  
+a[4] = 50
+
+### loop循环
+
+经常碰到这样的情况：某个循环无法在开头和结尾判断是否继续进行循环，必须在循环体中间某处控制循环的进行。如果遇到这种情况，一般在一个`while(true)`循环体里实现中途退出循环的操作。  
+Rust语言有原生的无限循环结构——loop：
+
+```rust
+fn main(){
+    let s = ['R', 'U', 'N', 'O', 'O', 'B'];
+    let mut i = 0;
+    loop{
+        let ch = s[i];
+        if ch == 'O' {
+            break;
+        }
+        println!("\'{}\'", ch);
+        i += 1;
+    }    
+}
+```
+
+运行结果：
+> 'R'  
+'U'  
+'N'
+
+loop循环可以通过break关键字类似于return一样使整个循环退出并给予外部一个返回值。这是一个十分巧妙的设计，因为loop这样的循环常被用来当做查找工具使用，如果找了某个东西当然要将这个结果交出去：
+
+```rust
+fn main(){
+    let s = ['R', 'U', 'N', 'O', 'O', 'B'];
+    let mut i = 0;
+    let location = loop{
+        let ch = s[i];
+        if ch == 'O' {
+            break i;
+        }
+        i += 1;
+    };
+    println!("\'O\' 的索引为 {}", location);
+}
+```
+
+运行结果：
+> 'O' 的索引为 3
+
