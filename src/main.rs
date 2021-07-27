@@ -1,8 +1,9 @@
 fn main(){
-    println!("Hello, world!");
-    another_function();
+    let reference_to_nothing = dangle();
 }
 
-fn another_function(){
-    println!("Hello， runoob！");
+fn dangle() -> &String{
+    let s = String::from("hello");
+
+    &s
 }
