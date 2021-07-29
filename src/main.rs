@@ -1,14 +1,18 @@
+trait Descriptive {
+    fn describe(&self) -> String;
+}
+
+struct Person {
+    name: String,
+    age: u8
+}
+
+impl Descriptive for Person {
+    fn describe(&self) -> String {
+        format!("{} {}",self.name, self.age)
+    }
+} 
+
 fn main() {
-    enum Book {
-        Papery(u32),
-        Electronic(String)
-    }
 
-    let book  = Book::Electronic(String::from("url"));
-
-    if let Book::Papery(index) = book {
-        println!("Papery {}", index);
-    } else {
-        println!("Not papery book");
-    }
 }

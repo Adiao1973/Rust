@@ -1482,3 +1482,655 @@ fn main() {
     }
 }
 ```
+
+## Rust组织管理
+
+任何一门编程语言如果不能组织任何代码都是难以深入的，几乎没有一个软件产品是由一个源文件编译而成的。  
+对于一个工程来说，组织代码是十分重要的。  
+Rust中有三个重要的组织概念：箱、包、模块。
+
+### 箱（Crate）
+
+“箱”是二进制程序文件或者库文件，存在于“包”中。  
+“箱”是树状结构的，它的树根是编译器开始运行时编译的源文件所编译的程序。  
+**注意：** “二进制程序文件”不一定是“二进制可执行文件”，只能确定是是包含目标机器语言的文件，文件格式随编译环境的不同而不同。
+
+### 包（Package）
+
+当我们使用`Cargo`执行`new`命令创建Rust工程时，工程目录下会建立一个Cargo.toml文件。工程的实质就是一个包，包必须由一个Cargo.toml文件来管理，该文件描述了包的基本信息以及依赖项。  
+一个包最多包含一个库“箱”，可以包含任意数量的二进制“箱”，但至少包含一个“箱”（不管是库还是二进制“箱”）。  
+当使用`cargo new`命令创建完包之后，src目录下会生成一个main.rs源文件，Cargo默认这个文件为二进制箱的根，编译之后的二进制箱将与包名相同。
+
+### 模块 （Moudle）
+
+对于一个软件工程来说，往往按照所使用的编程语言的组织规范来进行组织，组织模块的主要结构往往是树。Java组织功能模块的主要单位是类，而JavaSript组织模块的主要方式是function。  
+这些先进的语言的组织单位可以层层包含，就像文件系统的目录结构一样。Rust中的组织单位是模块（Moudle）。
+
+```rust
+mod nation {
+    mod goverment {
+        fn govern() {}
+    }
+    mod congress {
+        fn legislate() {}
+    }
+    mod court{
+        fn judicial() {}
+    }
+}
+```
+
+这是一段描述法治国家的程序：国家（nation）包含政府（government）、议会（congress）和法院（court），分别有行政、立法和司法的功能。我们可以把它转换成树状结构：
+
+```rust
+nation
+ ├── government
+ │ └── govern
+ ├── congress
+ │ └── legislate
+ └── court
+   └── judicial
+```
+
+在文件系统中，目录结构往往以斜杠在路径字符串中表示对象的位置，Rust中的路径分隔符是`::`。  
+路径分为绝对路径和相对路径。绝对路径从`crate`关键字开始描述。相对路径从`self`或`super`关键字或一个标识符开始描述。例如：  
+
+```rust
+crate::nation::government::govern();
+```
+
+是描述govern函数的绝对路径，相对路径可以表示为：
+
+```rust
+nation::government::govern();
+```
+
+现在可以尝试在一个源程序里定义类似的模块结构并在主函数中使用路径。
+如果这样做，一定会发现它不正确的地方：government模块和其中的函数都是私有（private）的，禁止访问它们。
+
+### 访问权限
+
+Rust中有两种简单的访问权：公共（public）和私有（private）。  
+默认情况下，如果不加修饰符，模块中的成员访问权将是私有的。  
+如果想使用公共权限，需要使用pub关键字。  
+对于私有的模块，只有在与其平级的位置或下级的位置才能访问，不能从其外部访问。  
+
+```rust
+mod nation {
+    pub mod goverment {
+        pub fn govern() {}
+    }
+    mod congress {
+        pub fn legislate() {}
+    }
+    mod court{
+        fn judicial() {
+            super::congress::legislate();
+        }
+    }
+}
+
+fn main() {
+    nation::goverment::govern();
+}
+```
+
+这段程序是能通过编译的。请注意观察court模块中super的访问方法。  
+如果模块中定义了结构体，结构体除了其本身是私有的以外，其字段也默认是私有的。所以如果想使用模块中的结构体以及其字段，需要pub声明：
+
+```rust
+mod back_of_house {
+    pub struct Breakfast {
+        pub toast: String,
+        seasonal_fruit: String,
+    }
+
+    impl Breakfast {
+        pub fn summer(toast: &str) -> Breakfast {
+            Breakfast {
+                toast: String::from(toast),
+                seasonal_fruit: String::from("peaches"),
+            }
+        }
+    }
+}
+
+pub fn eat_at_restaurant() {
+    let mut meal = back_of_house::Breakfast::summer("Rye");
+    meal.toast = String::from("Wheat");
+    println!("I'd like {} toast please", meal.toast);
+}
+
+fn main() {
+    eat_at_restaurant()
+}
+```
+
+运行结果：
+> I'd like Wheat toast please
+
+枚举类枚举项可以内含字段，但不具备类似的性质：
+
+```rust
+mod SomeModule {
+    pub enum Person {
+        King {
+            name: String
+        },
+        Quene
+    }
+}
+
+fn main() {
+    let person = SomeModule::Person::King{
+        name: String::from("Blue")
+    };
+    match person {
+        SomeModule::Person::King {name} => {
+            println!("{}", name);
+        }
+        _ => {}
+    }
+}
+```
+
+运行结果：
+> Blue
+
+### 难以发现的模块
+
+使用过Java的开发者在编程时往往非常讨厌最外层的class块——它的名字与文件名一模一样，因为它就表示文件容器，尽管它很繁琐，但我们不得不写一遍来强调“这个类是文件所包含的类”。  
+不过这样有一些好处：起码它让开发者明明白白的意识到了类包装的存在，而且可以明确的描述类的继承关系。  
+在Rust中，模块就像是Java中的类包装，但是文件一开头就可以写一个主函数，这如何解释呢？  
+每一个Rust文件的内容都是一个“难以发现”的模块。  
+让我们用两个文件来解释这一点：
+
+```rust
+// main.rs
+mod second_module;
+
+fn main() {
+    println!("This is the main module.");
+    println!("{}", second_module::message());
+}
+```
+
+```rust
+// second_module.rs
+pub fn message() -> String {
+    String::from("This is the 2nd module.")
+}
+```
+
+运行结果：
+> This is the main module.  
+This is the 2nd module.
+
+### use关键字
+
+use关键字能够将模块标识符引入当前作用域：
+
+```rust
+mod nation {
+    pub mod government {
+        pub fn govern() {}
+    }
+}
+
+use crate::nation::government::govern;
+
+fn main() {
+    govern();
+}
+```
+
+这段程序能够通过编译。  
+因为`use`关键字把`govern`标识符导入到了当前的模块下，可以直接使用。  
+这样就解决了局部模块路径过长的问题。
+当然，有些情况下存在两个相同的名称，且同样需要导入，可以使用`as`关键字为标识符添加别名：  
+
+```rust
+mod nation {
+    pub mod government {
+        pub fn govern() {}
+    }
+    pub fn govern() {}
+}
+
+use crate::nation::government::govern;
+use crate::nation::govern as nation_govern;
+
+fn main() {
+    nation_govern();
+    govern();
+}
+```
+
+这里有两个`govern`函数，一个是`nation`下的，一个是`government`下的，我们用`as`将`nation`下的取别名`nation_govern`。两个名称可以同时使用。  
+`use`关键字可以与`pub`关键字配合使用：
+
+```rust
+mod nation {
+    pub mod government {
+        pub fn govern() {}
+    }
+    pub use government::govern;
+}
+
+
+fn main() {
+    nation::govern();
+}
+```
+
+### 引用标准库
+
+Rust官方标准库字典：https://doc.rust-lang.org/stable/std/all.html  
+现在我们可以轻松的导入系统库来方便的开发程序了：
+
+```rust
+use std::f64::consts::PI;
+
+fn main() {
+    println!("{}", (PI / 2.0).sin());
+}
+```
+
+运行结果：
+> 1
+
+所有的系统库模块都是被默认导入的，所以在使用的时候只需要使用use关键字简化路径就可以方便的使用了。  
+
+## 错误处理
+
+Rust有一套独特的处理异常情况的机制，它并不像其它语言中的`try`机制那么简单。  
+首先，程序中一般会出现两种错误：可恢复错误和不可恢复错误。  
+可恢复错误的典型案例是文件访问错误，如果访问一个文件失败，有可能是因为它正在被占用，是正常的，我们可以通过等待来解决。  
+但还有一种错误是由编程中无法解决的逻辑错误导致的，例如访问数组末尾以外的位置。  
+大多数编程语言不区分这两种错误，并用`Exception`（异常）类来表示错误。在Rust中没有`Exception`。  
+对于可恢复错误用`Result<T,E>`类来处理，对于不可恢复错误使用`panic!`宏来处理。
+
+### 不可恢复错误
+
+在此之前没有专门介绍过Rust宏的语法，但已经使用过了`println!`宏，因为这些宏的使用较为简单，所以暂时不需要彻底掌握它，现在同样可以先学会`panic!`宏的使用方法。
+
+```rust
+fn main() {
+    panic!("error occured");
+    println!("Hello, Rust");
+}
+```
+
+运行结果：
+> thread 'main' panicked at 'error occured', src\main.rs:2:5  
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+很显然，程序并不能如约运行到`println!("Hello, Rust")`，而是在`panic!`宏被调用时停止了运行。  
+不可恢复的错误一定会导致程序受到致命的打击而终止运行。  
+现在注视错误输出的两行：  
+
+* 第一行输出了`panic!`宏调用的位置以及其输出的错误信息。
+* 第二行时一句提示，翻译成中文就是“通过`RUST_BACKTRACE = 1`环境变量运行以显示回溯”。接下来我们将介绍回溯（backtrace）。  
+
+紧接着刚才的例子，在VSCode中新建一个终端：
+
+![新建终端](README_files/8.jpg)
+
+在新建的终端里设置环境变量（不同的终端方法不同，这里介绍两种主要的方法）：  
+如果在Window7及以上的Windows系统版本中，默认使用的终端命令行时Powershell，请使用以下命令：
+> $env:RUST_BACKTRACE=1 ; cargo run
+
+如果使用的时Linux或macOS等UNIX系统，一般情况下默认使用的是bash命令行，请使用以下命令：
+> RUST_BACKTRACE=1 cargo run
+
+然后，就会看到以下文字：
+
+```rust
+stack backtrace:
+   0: std::panicking::begin_panic<str>
+             at C:\Users\user\.rustup\toolchains\stable-x86_64-pc-windows-msvc\lib\rustlib\src\rust\library\std\src\panicking.rs:519
+   1: greeting::main
+             at .\src\main.rs:2
+   2: core::ops::function::FnOnce::call_once<fn(),tuple<>>
+             at C:\Users\user\.rustup\toolchains\stable-x86_64-pc-windows-msvc\lib\rustlib\src\rust\library\core\src\ops\function.rs:227
+note: Some details are omitted, run with `RUST_BACKTRACE=full` for a verbose backtrace.
+```
+
+回溯是不可恢复错误的另一种处理方式，它会展开运行的栈并输出所有的信息，然后程序依然会退出。根据上面的代号1，可以找到编写的`panic!`宏触发的错误。
+
+### 可恢复的错误
+
+此概念十分类似于Java编程语言中的异常。实际上在C语言中就常常将函数返回值设置成整数来表达函数遇到的错误，在Rust中通过`Result<T, E>`枚举类作返回值进行异常表达：
+
+```rust
+enum Result<T, E> {
+    Ok(T),
+    Err(T),
+}
+```
+
+在Rust标准库中可能产生异常的函数的返回值都是`Result`类型的。例如：当尝试打开一个文件时：
+
+```rust
+use std::fs::File;
+
+fn main() {
+    let f = File::open("hello.txt");
+    match f {
+        Ok(file) => {
+            println!("File opened successfully.");
+        },
+        Err(err) => {
+            println!("Failed to open the file.");
+        }
+    }
+}
+```
+
+如果`hello.txt`文件不存在，会打印“**Failed to open the file.**”。  
+当然，我们在枚举类章节讲到的`if let`语法可以简化`match`语法块：
+
+```rust
+use std::fs::File;
+
+fn main() {
+    let f = File::open("hello.txt");
+
+    if let Ok(file) = f {
+        println!("File opened successfully.")
+    } else {
+        println!("Faile to open the file.")
+    }
+}
+```
+
+如果想使一个可恢复错误按不可恢复错误处理，`Result`类提供了两个方法：`unwarap()`和`expect(message: &str)`：
+
+```rust
+use std::fs::File;
+
+fn main() {
+    let f1 = File::open("hello.txt").unwrap();
+    let f2 = File::open("hello.txt").expect("Failed to open.");
+}
+```
+
+这段程序相当于`Result`为`err`时调用`panic!`宏。两者的区别在于`expect`能够向`panic!`宏发送一段指定的错误信息。
+
+### 可恢复的错误的传递
+
+之前所讲的是接收到错误的处理方式，但是如果我们自己编写一个函数在遇到错误时想传递出去怎么办呢？
+
+```rust
+fn f(i: i32) -> Result<i32, bool> {
+    if i >= 0 { Ok(i) }
+    else { Err(false) }
+}
+
+fn main() {
+    let r = f(10000);
+    if let Ok(v) = r {
+        println!("Ok: f(10000) = {}", v);
+    } else {
+        println!("Err");
+    }
+}
+```
+
+运行结果：
+> Ok: f(10000) = 10000
+
+这段程序中函数f是错误的根源，现在我们再写一个传递错误的函数g：
+
+```rust
+fn g(i: i32) -> Result<i32, bool> {
+    let t = f(i);
+    return match t {
+        Ok(i) => Ok(i),
+        Err(b) => Err(b)
+    };
+}
+```
+
+函数g传递了函数f可能出现的错误（这里的g只是一个简单的例子，实际上传递错误的函数一般还包含很多其它操作）。  
+这样写有些冗长，Rust中可以在`Result`对象后添加`?`操作符将同类的`Err`直接传递出去：
+
+```rust
+fn f(i: i32) -> Result<i32, bool> {
+    if i >= 0 { Ok(i) }
+    else { Err(false) }
+}
+
+fn g(i: i32) -> Result<i32, bool> {
+    let t = f(i)?;
+    Ok(t)
+}
+
+fn main() {
+    let r = g(10000);
+    if let Ok(v) = r {
+        println!("Ok: g(10000) = {}", v);
+    } else {
+        println!("Err");
+    }
+}
+```
+
+运行结果：
+> Ok: g(10000) = 10000
+
+`?`操作符的实际作用是将`Result`类非异常的值直接取出，如果有异常就将异常`Result`返回出去。所以，`?`操作符仅用于返回值类型为`Result<T, E>`的函数，其中`E`类型必须和`?`所处理的`Result`的`E`类型一致。
+
+### kind方法
+
+到此为止，Rust似乎没有像`try`块一样可以令任何位置发生的同类异常都直接得到相同的解决的语法，但这样并不意味着Rust实现不了：完全可以把`try`块在独立的函数中实现，将所有的异常都传递出去解决。实际上这才是一个分化良好的程序应当遵循的编程方法：应该注重独立功能的完整性。  
+但是这样需要判断`Result`的`Err`类型，获取`Err`类型的函数是`kind()`。
+
+```rust
+use std::io;
+use std::io::Read;
+use std::fs::File;
+
+fn read_text_from_file(path: &str) -> Result<String, io::Error> {
+    let mut f = File::open(path)?;
+    let mut s = String::new();
+    f.read_to_string(&mut s)?;
+    Ok(s)
+}
+
+fn main() {
+    let str_file = read_text_from_file("hello.txt");
+    match str_file {
+        Ok(s) => println!("{}", s),
+        Err(e) => {
+            match e.kind() {
+                io::ErrorKind::NotFound =>{
+                    println!("No such file");
+                },
+                _ => {
+                    println!("Cannot read the file");
+                }
+            }
+        }
+    }
+}
+```
+
+运行结果：
+> No such file
+
+## Rust泛型与特性
+
+泛型是一个编程语言不可或缺的机制。  
+C++语言中用“模板”来实现泛型，而C语言中没有泛型的机制，这也导致C语言难以构建类型复杂的工程。  
+泛型机制是编程语言用于表达类型抽象的机制，一般用于功能确定、数据类型待定的类，如链表、映射表等。
+
+### 在函数中定义泛型
+
+这是一个对整型数字选择排序的方法：
+
+```rust
+fn max(array: &[i32]) -> i32 {
+    let mut max_index = 0;
+    let mut i = 1;
+    while i < array.len() {
+        if array[i] > array[max_index] {
+            max_index = i;
+        }
+        i += 1;
+    }
+    array[max_index]
+}
+
+fn main() {
+    let a = [2, 4, 6, 3, 1];
+    println!("max = {}", max(&a));
+}
+```
+
+运行结果：
+> max = 6
+
+这是一个简单的取最大值程序，可以用于处理`i32`数字类型的数据，但无法用于`f64`类型的数据。通过使用泛型我们可以使这个函数可以利用到各个类型中去。但实际上并不是所有的数据类型都可以比大小，所以接下来一段代码并不是用来运行的，而是用来描述一下函数泛型的语法格式：
+
+```rust
+fn max<T>(array: &[T]) -> T {
+    let mut max_index = 0;
+    let mut i = 1;
+    while i < array.len() {
+        if array[i] > array[max_index] {
+            max_index = i;
+        }
+        i += 1;
+    }
+    array[max_index]
+}
+```
+
+### 结构体和枚举类中的泛型
+
+在之前我们学习的`Option`和`Result`枚举类就是泛型的。  
+Rust中的结构体和枚举类都可以实现泛型机制。
+
+```rust
+struct Point<T> {
+    x: T,
+    y: T
+}
+```
+
+这是一个点坐标结构体，T表示描述点坐标的数字类型。可以这样使用：
+
+```rust
+let p1 = Point {x: 1, y: 2};
+let p2 = Point {x: 1.0, y: 2.0};
+```
+
+使用时并没有声明类型，这里使用的是自动类型机制，但不允许出现类型不匹配的情况如下：  
+
+```rust
+let p = Point {x: 1, y: 2.0};
+```
+
+`x`与`1`绑定时就已经将`T`设定为`i32`，所以不允许再出现`f64`的类型。如果想让`x`与`y`用不同的数据类型表示，可以使用两个泛型标识符：
+
+```rust
+struct Point<T1, T2> {
+    x: T1,
+    y: T2
+}
+```
+
+在枚举类中表示泛型的方法诸如`Option`和`Result`：
+
+```rust
+enum Option<T> {
+    Some<T>,
+    None,
+}
+
+enum Result<T, E> {
+    Ok(T),
+    Err(E),
+}
+```
+
+结构体与枚举类都可以定义方法，那么方法也应该实现泛型的机制，否则泛型的结构体将无法被有效的方法操作。  
+
+```rust
+struct Point<T> {
+    x: T,
+    y: T,
+}
+
+impl<T> Point<T> {
+    fn x(&self) -> &T {
+        &self.x
+    }
+}
+
+fn main() {
+    let p =  Point{ x: 1, y: 2 };
+    println!("p.x = {}", p.x());
+}
+```
+
+**注意：** `impl`关键字的后方必须有`<T>`，因为它后面的T是以之为榜样的。但也可以为其中的一种泛型添加方法：
+
+```rust
+impl Point<f64> {
+    fn x(&self) -> f64 {
+        self.x
+    }
+}
+```
+
+`impl`块本身的泛型并没有阻碍其内部方法具有泛型的能力：
+
+```rust
+impl<T, U> Point<T, U> {
+    fn mixup<V, W>(self, other: Point<V, W>) -> Point<T, W> {
+        Point {
+            x: self.x,
+            y: other.y,
+        }
+    }
+}
+```
+
+方法`mixup`将一个`Point<T, U>`点的`x`与`Point<V, W>`点的`y`融合成一个类型为`Point<T, W>`的新点。
+
+### 特性
+
+特性（trait）概念接近于Java中的接口（interface），但两者不完全相同。特性与接口相同的地方在于它们都是一种行为规范，可以用于标识哪些结构体有哪些方法。  
+特性在Rust中用`trait`表示：
+
+```rust
+trait Descriptive {
+    fn describe(&self) -> String;
+}
+```
+
+`Descriptive`规定了实现者必须有`describe(&self) -> String`方法。  
+用它来实现一个结构体：
+
+```rust
+struct Person {
+    name: String,
+    age: u8
+}
+
+impl Descriptive for Person {
+    fn describe(&self) -> String {
+        format!("{} {}",self.name, self.age)
+    }
+}
+```
+
+格式是：
+
+```rust
+impl <特性名> for <所实现的类型名>
+```
+
+Rust 同一个结构体可以实现多个特性，每个`impl`块只能实现一个
