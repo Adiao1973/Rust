@@ -303,13 +303,13 @@ fn main(){
 }
 
 fn another_function(){
-    println!("Hello, runoob!");
+    println!("Hello, runzm!");
 }
 ```
 
 运行结果：
 > Hello,world!  
-Hello,runoob!
+Hello,runzm!
 
 **注意：** 在源代码中的main函数之后定义了another_function。Rust不在乎在何处定义函数，只需在某个地方定义他们即可。
 
@@ -570,11 +570,11 @@ Rust语言有原生的无限循环结构——loop：
 
 ```rust
 fn main(){
-    let s = ['R', 'U', 'N', 'O', 'O', 'B'];
+    let s = ['R', 'U', 'N', 'Z', 'M'];
     let mut i = 0;
     loop{
         let ch = s[i];
-        if ch == 'O' {
+        if ch == 'Z' {
             break;
         }
         println!("\'{}\'", ch);
@@ -592,21 +592,21 @@ loop循环可以通过break关键字类似于return一样使整个循环退出�
 
 ```rust
 fn main(){
-    let s = ['R', 'U', 'N', 'O', 'O', 'B'];
+    let s = ['R', 'U', 'N', 'Z', 'M'];
     let mut i = 0;
     let location = loop{
         let ch = s[i];
-        if ch == 'O' {
+        if ch == 'Z' {
             break i;
         }
         i += 1;
     };
-    println!("\'O\' 的索引为 {}", location);
+    println!("\'Z\' 的索引为 {}", location);
 }
 ```
 
 运行结果：
-> 'O' 的索引为 3
+> 'Z' 的索引为 3
 
 ## Rust所有权
 
@@ -636,7 +636,7 @@ Java语言编写的程序在虚拟机（JVM）中运行，JVM具备自动回收�
 ```rust
 {
     // 在声明以前，变量s无效
-    let s ="runoob";
+    let s ="runzm";
     // 这里是变量s的可用范围
 }
 // 变量范围已经结束，变量s无效
@@ -652,7 +652,7 @@ Java语言编写的程序在虚拟机（JVM）中运行，JVM具备自动回收�
 
 ```c
 {
-    char *s = strdup("runoob");
+    char *s = strdup("runzm");
     free(s); // 释放s资源
 }
 ```
@@ -873,7 +873,7 @@ fn main(){
     let s1 = String::from("run");
     let s2 = &s1;
     println!("{}", s2);
-    s2.push_str("oob"); // 错误，禁止修改租借的值
+    s2.push_str("zm"); // 错误，禁止修改租借的值
     println!("{}", s2);
 }
 ```
@@ -888,7 +888,7 @@ fn main(){
     let s2 = &mut s1;
     // s2 是可变的引用
 
-    s2.push_str("oob");
+    s2.push_str("zm");
     println!("{}", s2);
 }
 ```
@@ -930,3 +930,555 @@ fn dangle() -> &String{
 ```
 
 很显然，伴随着dangle函数的结束，其局部变量的值本身没有被当作返回值，被释放了。但它的引用却被返回，这个引用所指向的值已经不能确定的存在，故不允许其出现。
+
+## Rust Slice（切片）类型
+
+切片（Slice）是对数据值的部分引用。  
+切片这个名字往往出现在生物课上，我们做样本玻片的时候要从生物体上获取切片，以供在显微镜上观察。在Rust中，切片的意思大致也是这样，只不过它从数据取材引用。
+
+### 字符串切片
+
+最简单、最常用的数据切片类型是字符串切片（String Slice）。
+
+```rust
+fn main(){
+    let s = String::from("broadcast");
+
+    let part1 = &s[0..5];
+    let part2 = &s[5..9];
+    println!("{}={}+{}", s, part1, part2);
+}
+```
+
+运行结果：
+> broadcast=broad+cast
+
+![字符串切片](README_files/7.jpg)
+
+上图解释了字符串切片的原理（ **注：** Rust中的字符串类型实质上记录了字符在内存中的起始位置和其长度，暂时了解到这一点）。  
+使用`..`表示范围的语法在循环章节中出现过。`x..y`表示`[x,y)`的数学含义。`..`两边可以没有运算数：
+
+> ..y 等价于 0..y  
+x.. 等价于位置x到数据结束  
+.. 等价于位置0到数据结束
+
+**注意：** 到目前为止，尽量不要在字符串中使用非英文字符，因为编码的问题。具体原因会在“字符串”章节叙述。  
+被切片引用的字符串禁止更改其值：
+
+```rust
+fn main(){
+    let mut s = String::from("runzm");
+    let slice = &s[0..3];
+    s.push_str("yes!"); // 错误
+    println!("slice = {}", slice);
+}
+```
+
+这段程序不正确。  
+s被部分引用，禁止更改其值。  
+为什么每一次都要写`String::from("runoob")`，直接写`"runoob`不行吗？  
+在Rust中有两种常用的字符串类型：str和String。str是Rust核心语言类型，就是现在讲的字符串切片（String Slice），常常以引用的形式出现（&str）。  
+凡是用双引号包括的字符串常量整体的类型性质都是`&str`：
+
+```rust
+let s = "hello";
+```
+
+这里的`s`就是一个`&str`类型的变量。  
+String类型是Rust标准公共库提供的一种数据类型，它的功能更完善——它支持字符串的追加、清空等实用的操作。String和str除了同样拥有一个字符开始位置属性和一个字符串长度属性以外还有一个容量（capacity）属性。  
+`String`和`str`都支持切片，切片的结果是`&str`类型的数据。  
+
+**注意：** 切片结果必须是引用类型，但开发者必须自己明示这一点：
+
+```rust
+let slice = &s[0..3];
+```
+
+有一个快速的方法可以将`String`转换成`&str`：
+
+```rust
+let s1 = String::from("hello");
+let s2 = &s1[..];
+```
+
+### 非字符串切片
+
+除了字符串以外，其他一些线性数据结构也支持切片操作，例如数组：
+
+```rust
+fn main(){
+    let arr = [1, 3, 5, 7, 9];
+    let part = &arr[0..3];
+    for i in part.iter(){
+        println!("{}", i);
+    }
+}
+```
+
+运行结果：
+> 1  
+3  
+5
+
+## Rust结构体
+
+Rust中的结构体（Struct）与元组（Tuple）都可以将若干个类型不一定相同的数据捆绑在一起形成整体，但结构体的每个成员和其本身都有一个名字，这样访问它成员的时候就不用记住下标了。元组常用于非定义的多值传递，而结构体用于规范常用的数据结构。结构体的每个成员叫做“字段”。
+
+### 结构体定义
+
+这是一个结构体定义：
+
+```rust
+struct Site{
+    domain: String,
+    name: String,
+    nation: String,
+    found: u32
+}
+```
+
+**注意：** 这里跟C/C++不一样，在Rust里struct语句仅用来定义，不能声明实例，结尾不需要`;`符号，而且每个字段定义之后用`,`分隔。
+
+### 结构体实例
+
+Rust很多地方受JavaScript影响，在实例化结构体的时候用JSON对象的`key: value`语法来实现定义：
+
+```rust
+let runzm = Site {
+    domain: String::from("wwww.runzm.com"),
+    name: String::from("RUNZM"),
+    nation: String::from("China"),
+    found: 2013
+};
+```
+
+`struct`格式为：
+
+```rust
+    结构体类名 {
+        字段名：字段值,
+        ···
+    }
+```
+
+这样的好处是不仅使程序更加直观，还不需要按照定义的顺序来输入成员的值。  
+如果正在实例化的结构体有字段名称和现存变量名称一样的，可以这样简化书写：
+
+```rust
+let domain = String::from("www.runzm.com");
+let name = String::from("RUNZM");
+let runzm = Site {
+    domain,  // 等同于domain: domain,
+    name,   // 等同于name: name,
+    nation: String::from("China"),
+    found: 2013
+};
+```
+
+有这样一种情况：你想要新建一个结构体的实例，其中大部分属性需要被设置成与现存的一个结构体一样，仅需要改其中的一两个字段的值，可以使用结构体更新语法：
+
+```rust
+let site = Site {
+    domain: String::from("www.runzm.com"),
+    name: String::from("RUNOOB"),
+    ..runzm
+};
+```
+
+**注意：** `..runzm`后面不可以有逗号。这种语法不允许一成不变的复制另一个结构体实例，意思就是至少重新设定一个字段的值才能引用其他实例的值。
+
+### 元组结构体
+
+有一种更简单的定义和使用结构体的方式: **元组结构体**。  
+元组结构体是一种形式是元组的结构体。  
+与元组的区别是它有名字和固定的类型格式。它存在的意义是为了处理那些需要定义类型（经常使用）又不想太复杂的简单数据：
+
+```rust
+struct Color(u8, u8, u8);
+struct Point(f64, f64);
+
+let black = Color(0, 0, 0);
+let origin = Point(0.0, 0.0);
+```
+
+“颜色”和“点坐标”是常用的两种数据类型，但如果实例化时写个大括号再加上两个名字就为了可读性牺牲了便捷性，Rust不会遗留这个问题。元组结构体对象的使用方式和元组一样，通过`.`和下标来进行访问：
+
+```rust
+fn main(){
+    struct Color(u8, u8, u8);
+    struct Point(f64, f64);
+
+    let black = Color(0, 0, 0);
+    let origin = Point(0.0, 0.0);
+
+    println!("black = ({}, {}, {})", black.0, black.1, black.2);
+    println!("origin = ({}, {})", origin.0, origin.1);
+}
+```
+
+运行结果：
+> black = (0, 0, 0)  
+origin = (0, 0)
+
+### 结构体所有权
+
+结构体必须掌握字段值所有权，因为结构体失效的时候会释放所有字段。  
+这就是为什么案例中使用了`String`类型而不使用`&str`的原因。  
+但这不意味着结构体中不能定义引用型字段，这需要通过“生命周期”机制来实现。  
+但现在还难以说明“生命周期”概念，在后面说明。  
+
+#### 输出结构体
+
+调试中，完整地显示出一个结构体实例是非常有用的。但如果我们手动的书写一个格式会非常的不方便。所以Rust提供了一个方便地输出一整个结构体的方法：
+
+```rust
+#[derive(Debug)]
+
+struct Rectangle{
+    width: u32,
+    height: u32,
+}
+
+fn main(){
+    let rect1 = Rectangle{width: 30, height: 50};
+
+    println!("rect1 is {:?}", rect1);
+}
+```
+
+如第一行所示：一定要导入调式库`#[derive(Debug)]`，之后在`println`和`print`宏中就可以用`{:?}`占位符输出一整个结构体：
+> rect1 is Rectangle { width: 30, height: 50 }
+
+如果属性较多的话可以使用另一个占位符`{:#?}`。  
+输出结果：
+> rect1 is Rectangle {
+    width: 30,
+    height: 50,
+}
+
+#### 结构体方法
+
+方法（Mothod）和函数（Function）类似，只不过它是用来操作结构体实例的。  
+如果学习过一些面向对象的语言，那么一定很清楚函数一般放在类定义里并在函数中用this表示所操作的实例。  
+Rust语言不是面向对象的，从它所有权机制的创新可以看出这一点。但是面向对象的珍贵思想可以在Rust实现。  
+结构体方法的第一个参数必须是`&self`，不需要声明类型，因为self不是一种风格而是关键字。  
+计算一个矩形的面积：
+
+```rust
+struct Rectangle{
+    width: u32,
+    height: u32,
+}
+
+impl Rectangle{
+    fn area(&self) -> u32 {
+        self.width * self.height
+    }
+}
+
+fn main(){
+    let rect1 = Rectangle{width: 30, height: 50};
+
+    println!("rect1's erea is {}", rect1.area());
+}
+```
+
+输出结果：
+> rect1's erea is 1500  
+
+**注意：** 在调用结构体方法的时候不需要填写self，这是出于对使用方便性的考虑。
+
+一个多参数的例子：
+
+```rust
+struct Rectangle{
+    width: u32,
+    height: u32,
+}
+
+impl Rectangle{
+    fn area(&self) -> u32 {
+        self.width * self.height
+    }
+
+    fn wider(&self, rect: &Rectangle) -> bool {
+        self.width > rect.width
+    }
+}
+
+fn main(){
+    let rect1 = Rectangle{width: 30, height: 50};
+    let rect2 = Rectangle{width: 40, height: 20};
+
+    println!("{}", rect1.wider(&rect2));
+}
+```
+
+运行结果：
+> false
+
+这个程序计算rec1是否比rec2更宽。
+
+### 结构体关联函数
+
+之所以“结构体方法”不叫“结构体函数”是因为“函数”这个名字留给了这种函数：它在impl块中却没有`&self`参数。  
+这种函数不依赖实例，但是使用它需要声明是在哪个impl块中的。  
+一直使用的`String::from`函数就是一个“关联函数”。
+
+```rust
+#[derive(Debug)]
+
+struct Rectangle{
+    width: u32,
+    height: u32,
+}
+
+impl Rectangle{
+    fn create(width: u32, height: u32) -> Rectangle {
+        Rectangle{width, height}
+    }
+}
+
+fn main(){
+    let rect = Rectangle::create(30, 50);
+
+    println!("{:#?}", rect);
+}
+```
+
+运行结果：
+> Rectangle {  
+    width: 30,  
+    height: 50,  
+}
+
+**Tip：** 结构体`impl`块可以写几次，效果相当于它们内容的拼接！
+
+#### 单元结构体
+
+结构体只可以作为一种象征而无需任何成员：
+
+```rust
+struct UnitStruct;
+```
+
+我们称这种没有身体的结构体为单元结构体（Unit Struct）。
+
+## Ruct枚举类
+
+枚举类在Rust中并不像其他编程语言中的概念那么简单，但依然可以十分简单的使用：
+
+```rust
+#[derive(Debug)]
+
+enum Book {
+    Papery, Electronic
+}
+
+fn main() {
+    let book = Book::Papery;
+
+    println!("{:?}", book);
+}
+```
+
+运行结果：
+> Papery
+
+书分为纸质书（Papery book）和电子书（Electronic book）。  
+如果现在正在开发一个图书管理系统，需要描述两种书的不同属性（纸质书有索书号，电子书只有URL），你可以为枚举类成员添加元组属性描述：  
+
+```rust
+enum Book {
+    Papery(u32), 
+    Electronic(String),
+}
+
+let book = Book::Papery(1001);
+let ebook =  Book::Electronic(String::from("url://..."));
+```
+
+如果你想为属性命名，可以用结构体语法：
+
+```rust
+enum Book {
+    Papery{ index: u32 },
+    Electronic{ url: String},
+}
+
+let book = Book::Papery{index: 1001};
+```
+
+虽然可以如此命名，但请注意，并不能像访问结构体字段一样访问枚举类绑定的属性。访问的方法在match语法中。
+
+### match语法  
+
+枚举的目的是对某一类事物的分类，分类的目的是为了对不同的情况进行描述。基于这个原理，往往枚举类最终都会被分支结构处理（许多语言中的switch）。switch语法很经典，但在Rust中并不支持，很多语言放弃switch的原因都是因为switch容易存在因忘记添加break而产生的串接运行问题，Java和C#这类语言通过安全检查杜绝这种情况出现。  
+Rust通过match语句来实现分支结构。下面是如何用match处理枚举类：
+
+```rust
+enum Book {
+    Papery {index: u32},
+    Electronic {url: String},
+}
+
+let book = Book::Papery{index: 1001};
+
+match book {
+    Book::Papery{ index } => {
+        println!("Papery book {}", index);
+    },
+    Book::Electronic{ url } => {
+        println!("E-book {}", url);
+    }
+}
+```
+
+match除了能够对枚举类进行分支选择以外，还可以对整数、浮点数、字符和字符串切片引用（`&str`）类型的数据进行分支选择。其中，浮点数类型被分支选择虽然合法，但不推荐这样使用，因为精度问题可能会导致分支错误。  
+对非枚举类进行分支选择时必须注意处理例外情况，即使在例外情况下没有任何要做的事`.`例外情况用下划线`_`表示：
+
+```rust
+fn main() {
+    let t ="abc";
+
+    match t {
+        "abc" => println!("Yes"),
+        _ => {},
+    }
+}
+```
+
+### Option枚举类
+
+`Option`是Rust标准库中的枚举类，这个类用于填补Rust不支持`null`引用的空白。  
+许多语言支持`null`的存在（C/C++、Java），这样很方便，但也制造了极大的问题，`null`的发明者也承认了这一点，“一个方便的想法造成累计10亿美元的损失”。  
+`null`经常在开发者把一切都当做不是null的时候给予程序致命一击：毕竟只要出现一个这样的错误，程序的运行就要彻底终止。  
+为了解决这个问题，很多语言默认不允许`null`，但在语言层面支持`null`的出现（常在类型前面用？符号修饰）。  
+Java默认支持`null`，但可以通过`@NotNull`注解限制出现`null`，这是一种应付的方法。  
+Rust在语言层面彻底不允空值`null`的存在，但无奈`null`可以高效的解决少量的问题，所以Rust引入了`Option`枚举类：
+
+```rust
+enum Option<T> {
+    Some(T),
+    None,
+}
+```
+
+如果你想定义一个可以为空值的变量，你可以这样：
+
+```rust
+let opt = Option::Some("Hello");
+```
+
+如果你想针对`opt`执行某些操作，你必须先判断它是否是`Option::None`：
+
+```rust
+fn main(){
+    let opt = Option::Some("hello");
+
+    match opt {
+        Option::Some(something) => {
+            println!("{}", something);
+        },
+        Option::None => {
+            println!("opt is nothing");
+        }
+    }
+}
+```
+
+运行结果：
+> hello
+
+如果变量刚开始是空值，请体谅一下编译器，它怎么知道值不为空的时候变量是什么类型呢？  
+所以初始值为空的`Option`必须明确类型：
+
+```rust
+fn main(){
+    let opt: Option<&str> = Option::None;
+
+    match opt {
+        Option::Some(something) => {
+            println!("{}", something);
+        },
+        Option::None => {
+            println!("opt is nothing");
+        }
+    }
+}
+```
+
+运行结果：
+> opt is nothing
+
+这种设计会让空值编程变得不容易，但这正是构建一个稳定高效的系统所需要的。由于`Option`是Rust编译器默认引入的，在使用时可以省略`Option::`直接写`None`或者`Some()`。  
+`Option`是一种特殊的枚举类，它可以含值分支选择：
+
+```rust
+fn main(){
+    let t = Some(64);
+
+    match t {
+        Some(64) => println!("Yes"),
+        _ => println!("No"),
+    }
+}
+```
+
+### if let 语法
+
+```rust
+fn main(){
+    let i = 0;
+    
+    match i {
+        0 => println!("zero"),
+        _ => {},
+    }
+}
+```
+
+放入主函数运行结果：
+> zero
+
+这段程序的目的是判断`i`是否是数字`0`，如果是就打印`zero`。  
+现在用`if let`语法缩短这段代码：
+
+```rust
+fn main(){
+    let i = 0;
+    
+    if let 0 = i {
+        println!("zero");
+    }
+}
+```
+
+`if let`语法格式如下：
+
+```rust
+if let 匹配值 = 源变量 {
+    语句块
+}
+```
+
+可以在之后添加一个else块来处理例外情况。  
+if let语法可以认为是只区分两种情况的match语句的“语法糖”（语法糖指的是某种语法的原理相同的便捷替代品）。  
+对于枚举类依然适用：  
+
+```rust
+fn main() {
+    enum Book {
+        Papery(u32),
+        Electronic(String)
+    }
+
+    let book  = Book::Electronic(String::from("url"));
+
+    if let Book::Papery(index) = book {
+        println!("Papery {}", index);
+    } else {
+        println!("Not papery book");
+    }
+}
+```

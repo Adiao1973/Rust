@@ -1,9 +1,14 @@
-fn main(){
-    let reference_to_nothing = dangle();
-}
+fn main() {
+    enum Book {
+        Papery(u32),
+        Electronic(String)
+    }
 
-fn dangle() -> &String{
-    let s = String::from("hello");
+    let book  = Book::Electronic(String::from("url"));
 
-    &s
+    if let Book::Papery(index) = book {
+        println!("Papery {}", index);
+    } else {
+        println!("Not papery book");
+    }
 }
