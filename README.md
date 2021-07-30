@@ -2133,4 +2133,457 @@ impl Descriptive for Person {
 impl <特性名> for <所实现的类型名>
 ```
 
-Rust 同一个结构体可以实现多个特性，每个`impl`块只能实现一个
+Rust 同一个结构体可以实现多个特性，每个`impl`块只能实现一个。
+
+### 默认特性
+
+这是特性与接口的不同点：接口只能规范方法而不能定义方法，但特性可以定义方法作为默认方法，因为是“默认”，所以对象既可以重新定义方法，也可以不重新定义方法使用默认的方法：
+
+```rust
+trait Descriptive {
+    fn describe(&self) -> String {
+        String::from("[Object]")
+    }
+}
+
+struct Person {
+    name: String,
+    age: u8
+}
+
+impl Descriptive for Person {
+    fn describe(&self) -> String {
+        format!("{} {}",self.name, self.age)
+    }
+} 
+
+fn main() {
+    let cali = Person {
+        name: String::from("cali"),
+        age: 24
+    };
+    println!("{}", cali.describe());
+}
+```
+
+运行结果：
+> cali 24
+
+如果我们将`impl Descriptive for Person`块中的内容去掉，那么运行结果就是：
+> [Object]
+
+### 特性做参数
+
+很多情况下需要传递一个函数做参数，例如回调函数、设置按钮事件等。在Java中函数必须以接口实现的类实例来传递，在Rust中可以通过传递特性参数来实现：
+
+```rust
+fn output(object: impl Descriptive) {
+    println!("{}", object.describe());
+}
+```
+
+任何实现了`Descriptive`特性的对象都可以作为这个函数的参数，这个函数没必要了解传入对象有没有其他属性或方法，只需要了解它一定有`Descriptive`特性规范的方法就可以了。当然，此函数也无法使用其他的属性与方法。  
+特性参数还可以用这种等效语法实现：
+
+```rust
+fn output<T: Descriptive>(object: T) {
+    println!("{}", object.describe());
+}
+```
+
+这是一种风格类似泛型的语法糖，这种语法糖在有多个参数类型均是特性的情况下十分实用：
+
+```rust
+fn output_two<T: Descriptive>(aeg1: T, arg2: T) {
+    println!("{}", arg1.describe());
+    println!("{}", arg2.describe());
+}
+```
+
+特性作类型表示时如果涉及多个特性，可以用`+`符号表示，例如：
+
+```rust
+fn notify(item: impl Summary + Display)
+fn notify<T: Summary + Display>(item: T)
+```
+
+**注意：** 仅用于表示类型的时候，并不意味着可以在`impl`块中使用。  
+复杂的实现关系可以使用`where`关键字简化，例如：
+
+```rust
+fn some_function<T: Display + Clone, U: Clone + Debug>(t: T, u: U)
+```
+
+可以简化成：
+
+```rust
+fn some_function<T, U>(t: T, u: U) -> i32
+    where T: Display + Clone,
+          U: Clone + Debug
+```
+
+在了解这个语法后，泛型章节中的“取最大值”案例就可以真正的实现了：
+
+```rust
+trait Comparable {
+    fn compare(&self, object: &Self) -> i8; 
+}
+
+fn max<T: Comparable>(array: &[T]) -> &T {
+    let mut max_index = 0;
+    let mut i = 1;
+    while i < array.len() {
+        if array[i].compare(&array[max_index]) > 0 {
+            max_index = i;
+        }
+        i += 1;
+    }
+    &array[max_index]
+}
+
+impl Comparable for f64 {
+    fn compare(&self, object: &f64) -> i8 {
+        if &self > &object { 1 }
+        else if &self == &object { 0 }
+        else { -1 }
+    }
+}
+
+fn main() {
+    let arr = [1.0, 3.0, 5.0, 4.0, 2.0];
+    println!("maximum of arr is {}", max(&arr));
+}
+```
+
+运行结果：
+> maximum of arr is 5
+
+**Tip：** 由于需要声明`compare`函数的第二参数必须与实现该特性的类型相同，所以`Self`(注意大小写)`关键字就代表了当前类型（不是实例）本身。
+
+### 特性做返回值
+
+特性做返回值格式如下：
+
+```rust
+fn person() -> impl Descriptive {
+    Person {
+        name: String::from("Cali"),
+        age: 24
+    }
+}
+```
+
+但是有一点，特性做返回值只接收实现了该特性的对象做返回值且在同一个函数中所有可能的返回值类型必须完全一样。比如结构体`A`与结构体`B`都实现了特性`Trait`，下面这个函数就是 **错误** 的：
+
+```rust
+fn some_function(bool bl) -> impl Descriptive {
+    if bl {
+        return A {}；
+    } else {
+        return B {};
+    }
+}
+```
+
+### 有条件实现方法
+
+`impl`功能十分强大，可以用它实现类的方法。但对于泛型来说，有时我们需要区分一下它所属的泛型已经实现的方法来决定它接下来该实现的方法：
+
+```rust
+struct A<T> {}
+
+impl<T: B + C> A<T> {
+    fn d(&self) {}
+}
+```
+
+这段代码声明了`A<T>`类型必须在T已经实现了`B`和`C`特性的前提下才能有效实现此`impl`块。
+
+## Rust生命周期
+
+Rust生命周期机制是与所有权机制同等重要的资源管理机制。  
+之所以引入这个概念主要是应对复杂类型系统中资源管理的问题。  
+引用是对待复杂类型时必不可少的机制，毕竟复杂类型的数据不能被处理器轻易地复制和计算。  
+但引用往往导致极其复杂的资源管理问题，首先认识一下垂悬引用：
+
+```rust
+{
+    let r;
+
+    {
+        let x = 5;
+        r = &x;
+    }
+
+    println!("r: {}", r);
+}
+```
+
+这段代码是不会通过Rust编译器的，原因是`r`所引用的值已经在使用之前就被释放。
+
+![垂悬引用](README_files/9.jpg)
+
+上图中的红色范围`'a`表示`r`的生命周期，绿色范围`'b`表示`x`的生命周期。很显然，`'b`比`'a`小得多，引用必须在值的生命周期以内才有效。  
+一直以来，我们都在结构体中使用`String`而不用`&str`，现在用一个案例解释原因：
+
+```rust
+fn longer(s1: &str, s2: &str) -> &str {
+    if s2.len() > s1.len() {
+        s2
+    } else {
+        s1
+    }
+}
+```
+
+`longer`函数取`s1`和`s2`两个字符串切片中较长的一个返回其引用值。但是，这段代码不会通过编译，原因是返回值引用可能会返回过期的引用：
+
+```rust
+fn main() {
+    let r;
+    {
+        let s1 = "rust";
+        let s2 = "ecmascript";
+        r = longer(s1, s2);
+    }
+    println!("{} is longer", r);
+}
+```
+
+这段程序中虽然经过了比较，但`r`被使用的时候源值`s1`和`s2`都已经失效了。当然，可以把`r`的使用移到`s1`和`s2`的生命周期范围以内防止这种错误的发生，但对于函数来说，它并不能知道自己以外的地方是什么情况，它为了保障自己传递出去的值是正常的，必选所有权原则消除一切危险，所以`longer`函数并不能通过编译。
+
+### 生命周期注释
+
+生命周期注释是描述引用生命周期的方法。  
+虽然这样并不能够改变引用的生命周期，但可以在合适的地方声明两个引用的生命周期一致。  
+生命周期注释用单引号开头，跟着一个小写字母单词：
+
+```rust
+&i32 // 常规注释
+&'a i32 // 含有生命周期注释的引用
+&'a mut i32 // 可变型含有生命周期注释的引用
+```
+
+现在用生命周期注释改造`longer`函数：
+
+```rust
+fn longer<'a>(s1: &'a str, s2: &'a str) -> &'a str {
+    if s2.len() > s1.len() {
+        s2
+    } else {
+        s1
+    }
+}
+```
+
+现在需要用泛型声明来规范生命周期的名称，随后函数返回值的生命周期将与两个参数的生命周期一致，所以在调用时可以这样写：
+
+```rust
+fn main() {
+    let r;
+    {
+        let s1 = "rust";
+        let s2 = "ecmascript";
+        r = longer(s1, s2);
+        println!("{}  is longer", r);
+    }
+}
+```
+
+以上两端程序结合的运行结果：
+> ecmascript is longer
+
+**注意：** 别忘记了自动类型判断的原则。
+
+### 结构体中使用字符串切片引用
+
+之前留下的疑问，在此解答：
+
+```rust
+fn main() {
+    struct Str<'a> {
+        content: &'a str
+    }
+    let s = Str {
+        content: "string_slice"
+    };
+    println!("s.content = {}", s.content);
+}
+```
+
+运行结果：
+> s.content = string_slice
+
+如果对结构体`Str`有方法定义：
+
+```rust
+impl<'a> Str<'a> {
+    fn get_content(&self) -> &str {
+        self.content
+    }
+}
+```
+
+这里的返回值并没有生命周期注释，但是加上也无妨。这是一个历史遗留问题，早期Rust并不支持生命周清泉自动判断，所有的生命周期必须严格声明，但主流稳定版本的Rust已经支持了这个功能。
+
+### 静态生命周期
+
+生命周期注释有一个特别的：`'static`。所有用双引号包括的字符串常量所代表的精确数据类型都是`&'static str`，`'static`所表示的生命周期从程序运行开始到程序运行结束。
+
+### 泛型、特性与生命周期协同作战
+
+```rust
+use std::fmt::Display;
+
+fn longest_with_an_announcement<'a, T>(x: &'a str, y: &'a str, ann: T) -> &'a str
+    where T: Display
+{
+    println!("Announcement! {}", ann);
+    if x.len() > y.len() {
+        x
+    } else {
+        y
+    }
+}
+```
+
+这段程序出自Rust圣经，是一个同时使用了泛型、特性、生命周期机制的程序。
+
+## Rust文件与IO
+
+介绍Rust语言的I/O操作
+
+### 接收命令行参数
+
+命令行程序是计算机程序最基础的存在形式，几乎所有的操作系统都支持命令行程序并将可视化程序的运行基于命令行机制。  
+命令行程序必须能够接收来自命令行环境的参数，这些参数往往在一条命令行的命令之后以空格符分隔。  
+在很多语言中（如Java和C/C++）环境参数是以主函数的参数（常常是一个字符串数组）传递给程序的，但在Rust中主函数是个无参函数，环境参数需要开发者通过`std::env`模块取出，过程十分简单：
+
+```rust
+fn main() {
+    let args = std::env::args();
+    println!("{:#?}", args);
+}
+```
+
+现在直接运行程序：
+
+> ```rust
+> Args {
+>    inner: [
+>         "F:\rust\runoob-greeting\greeting\target\debug\greeting.exe",
+>     ],
+> }
+> ```
+
+这个结果中`Args`结构体中有一个`inner`数组，只包含唯一的字符串，代表了当前运行的程序所在的位置。
+但这个数据结构令人难以理解,现在简单地遍历它：
+
+```rust
+fn main() {
+    let args = std::env::args();
+    for arg in args {
+        println!("{}", arg);
+    }
+}
+```
+
+运行结果：
+> F:\rust\runoob-greeting\greeting\target\debug\greeting.exe
+
+
+一般参数们就是拿来被遍历的，不是吗？  
+现在打开许久未碰的`launch.json`，找到`"args":[]`，这里可以设置运行时的参数，将它写成`"args":["first","second"]`，然后保存、再次运行刚才的程序，运行结果：
+> F:\rust\runoob-greeting\greeting\target\debug\greeting.exe  
+first  
+second
+
+### 命令行输入
+
+早期的章节详细讲述了如何使用命令行输出，这是由于语言学习的需要，没有输出是无法调试程序的。但从命令行获取输入的信息对于一个命令行程序来说依然是相当重要的。  
+在Rust中，`std::io`模块提供了标准输入（可认为是命令行输入）的相关功能：
+
+
+```rust
+use std::io::stdin;
+
+fn main() {
+    let mut str_buf = String::new();
+
+    stdin().read_line(&mut str_buf).expect("Failed to read line.");
+
+    println!("Your input line is \n{}", str_buf);
+}
+```
+
+令VSCode环境支持命令行输入是一个非常繁琐的事情，牵扯到跨平台的问题和不可调试的问题，所以我们直接在VSCode终端中运行程序。  
+在命令行中运行：
+> PS F:\rust\runoob-greeting\greeting> cd .\target\debug\  
+PS F:\rust\runoob-greeting\greeting\target\debug> .\greeting.exe  
+ZM  
+Your input line is  
+ZM
+
+`std::ios::stdio`包含`read_line`读取方法，可以读取一行字符串到缓冲区，返回值都是`Result`枚举类，用于传递读取中出现的错误，所以常用`expect`或`unwrap`函数来处理错误。  
+**注意：** 目前Rust标准库还没有提供直接从命令行读取数字或格式化数据的方法，我们可以读取一行字符串并使用字符串识别函数处理数据。  
+
+
+### 文件读取
+
+在计算机的`E:\`目录下建立文件`text.txt`，内容如下：
+
+> This is a text file.
+
+这是一个将文本文件内容读入字符串的程序：
+
+```rust
+use std::fs;
+
+fn main() {
+    let text = fs::read_to_string("E:\\text.txt").unwrap();
+    println!("{}", text);
+}
+```
+
+运行结果：
+> This is a text file.
+
+在Rust中读取内存可容纳的一整个文件是一件极其简单的事情，`std::fs`模块中的`read_to_string`方法可以轻松完成文本文件的读取。  
+但如果要读取的文件是二进制文件 我们可以用`std::fs::read`函数读取`u8`类型集合：
+
+```rust
+use std::fs;
+
+fn main() {
+    let content = fs::read("E:\\text.txt").unwarp();
+    println!("{:?}", content);
+}
+```
+
+运行结果：
+> [84, 104, 105, 115, 32, 105, 115, 32, 97, 32, 116, 101, 120, 116, 32, 102, 105, 108, 101, 46]
+
+以上两种方式是一次性读取，十分适合Web应用的开发。但是对于一些底层程序来说，传统的按流读取的方式依然是无法被取代的，因为更多情况下文件的大小可能远超内存容量。  
+Rust中的文件流读取方式：
+
+```rust
+use std::io::prelude::*;
+use std::fs;
+
+fn main() {
+    let mut buffer = [0u8; 5];
+    let mut file = fs::File::open("E:\\text.txt").unwrap();
+    file.read(&mut buffer).unwrap();
+    println!("{:?}", buffer);
+    file.read(&mut buffer).unwrap();
+    println!("{:?}", buffer);
+}
+```
+
+运行结果：
+> [84, 104, 105, 115, 32]  
+[105, 115, 32, 97, 32]
+
+`std::fs`模块中的`File`类是描述文件的类，可以用于打开文件，再打开文件之后，我们可以使用`File`的`read`方法按流读取文件的下面一些字节到缓冲区（缓冲区是一个`u8`数组），读取的字节数等于缓冲区的长度。  
+**注意：** VSCode目前还不具备自动添加标准库引用的功能，所以有时出现“函数或方法不存在”一样的错误有可能是标准库引用的问题。可以查看标准库的注释文档（鼠标放到上面会出现）来手动添加标准库。  
+`std::fs::File`的`open`方法是“只读”打开文件，并且没有配套的`close`方法，因为Rust编译器可以在文件不再被使用时自动关闭文件。
