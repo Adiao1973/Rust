@@ -85,10 +85,19 @@
   - [Rust集合与字符串](#rust集合与字符串)
     - [向量](#向量)
     - [字符串](#字符串)
+    - [映射表](#映射表)
+  - [Rust面向对象](#rust面向对象)
+    - [封装](#封装)
+    - [继承](#继承)
+  - [Rust并发编程](#rust并发编程)
+    - [线程](#线程)
+    - [join方法](#join方法)
+    - [move强制所有权迁移](#move强制所有权迁移)
+    - [消息传递](#消息传递)
 
 ## Rust输出到命令行
 
-* Rust输出到文字的方式主要有两种: `pirntln!()` 和 `print!()`
+- Rust输出到文字的方式主要有两种: `pirntln!()` 和 `print!()`
 
     这两个“函数”都是命令行输出字符串的方法，区别仅在于前者会在输出最后附加一个换行符。当用这两个“函数”输出信息时，第一个参数时格式字符串，后面是一串可变参数，对应着格式字符串重的“占位符”，这一点与C语言中的printf函数很相似。但是，Rust中格式字符串中的占位符不是“%+字母”的形式，而是一对{}
 
@@ -706,11 +715,11 @@ Java语言编写的程序在虚拟机（JVM）中运行，JVM具备自动回收�
 
 所有权有以下三条规则：
 
-* Rust中的每个值都有一个变量，称为其所有者。
+- Rust中的每个值都有一个变量，称为其所有者。
 
-* 一次只能有一个所有者。
+- 一次只能有一个所有者。
 
-* 当所有者不在程序运行范围时，该值将被删除。
+- 当所有者不在程序运行范围时，该值将被删除。
 
 这三条规则是所有权概念的基础。  
 接下来将介绍与所有权概念有关的概念。
@@ -761,15 +770,15 @@ let y = x;
 
 这个程序将值5绑定到变量x，然后将x的值复制并赋值给变量y。现在栈中将有两个值5。此情况中的数据是“基本数据”类型的数据，不需要储存到堆中，仅在栈中的数据的“移动”方式是直接复制，这不会花费更长的时间或更多的储存空间。“基本数据”类型有这些：
 
-* 所有整数类型，例如i32、u32、i64等。
+- 所有整数类型，例如i32、u32、i64等。
 
-* 布尔类型bool，值为true或false。
+- 布尔类型bool，值为true或false。
 
-* 所有浮点类型，f32和f64。
+- 所有浮点类型，f32和f64。
 
-* 字符类型char。
+- 字符类型char。
 
-* 仅包含以上类型数据的元组（Tuples）。
+- 仅包含以上类型数据的元组（Tuples）。
 
 但如果发生交互的数据在堆中就是另外一种情况：
 
@@ -1811,7 +1820,7 @@ fn main() {
 
 ### 引用标准库
 
-Rust官方标准库字典：https://doc.rust-lang.org/stable/std/all.html  
+Rust官方标准库字典：<https://doc.rust-lang.org/stable/std/all.html>  
 现在我们可以轻松的导入系统库来方便的开发程序了：
 
 ```rust
@@ -1855,8 +1864,8 @@ note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
 不可恢复的错误一定会导致程序受到致命的打击而终止运行。  
 现在注视错误输出的两行：  
 
-* 第一行输出了`panic!`宏调用的位置以及其输出的错误信息。
-* 第二行时一句提示，翻译成中文就是“通过`RUST_BACKTRACE = 1`环境变量运行以显示回溯”。接下来我们将介绍回溯（backtrace）。  
+- 第一行输出了`panic!`宏调用的位置以及其输出的错误信息。
+- 第二行时一句提示，翻译成中文就是“通过`RUST_BACKTRACE = 1`环境变量运行以显示回溯”。接下来我们将介绍回溯（backtrace）。  
 
 紧接着刚才的例子，在VSCode中新建一个终端：
 
@@ -2577,7 +2586,6 @@ fn main() {
 运行结果：
 > F:\rust\runoob-greeting\greeting\target\debug\greeting.exe
 
-
 一般参数们就是拿来被遍历的，不是吗？  
 现在打开许久未碰的`launch.json`，找到`"args":[]`，这里可以设置运行时的参数，将它写成`"args":["first","second"]`，然后保存、再次运行刚才的程序，运行结果：
 > F:\rust\runoob-greeting\greeting\target\debug\greeting.exe  
@@ -2588,7 +2596,6 @@ second
 
 早期的章节详细讲述了如何使用命令行输出，这是由于语言学习的需要，没有输出是无法调试程序的。但从命令行获取输入的信息对于一个命令行程序来说依然是相当重要的。  
 在Rust中，`std::io`模块提供了标准输入（可认为是命令行输入）的相关功能：
-
 
 ```rust
 use std::io::stdin;
@@ -2612,7 +2619,6 @@ ZM
 
 `std::ios::stdio`包含`read_line`读取方法，可以读取一行字符串到缓冲区，返回值都是`Result`枚举类，用于传递读取中出现的错误，所以常用`expect`或`unwrap`函数来处理错误。  
 **注意：** 目前Rust标准库还没有提供直接从命令行读取数字或格式化数据的方法，我们可以读取一行字符串并使用字符串识别函数处理数据。  
-
 
 ### 文件读取
 
@@ -2897,4 +2903,422 @@ let s = "你好";
 let len = s.len();
 ```
 
-这里`len`的值是6。因为
+这里`len`的值是6。因为中文是`UTF-8`编码的，每个字符长3字节，所以长度为6。但是Rust中支持`UTF-8`字符对象，所以如果想统计字符数量可以先取字符串为字符集合：  
+
+```rust
+let s = "hello你好";
+let len = s.chars().count();
+```
+
+这里`len`的值是7，因为一共有7个字符。统计字符的速度比统计数据长度的速度慢很多。  
+遍历字符串;
+
+```rust
+fn main() {
+    let s = String::from("hello你好");
+    for c in s.chars() {
+        println!("{}", c);
+    }
+}
+```
+
+运行结果：
+> h  
+e  
+l  
+l  
+o  
+你  
+好
+
+从字符串中取单个字符：
+
+```rust
+fn main() {
+    let s = String::from("EN中文");
+    let a = s.chars().nth(2);
+    println!("{:?}", a);
+}
+```
+
+运行结果：
+> Some('中')
+
+**注意：** `nth`函数是从迭代器中取出某值的方法，请不要在遍历中这样使用！因为`UTF-8`每个字符的长度不一定相等！  
+如果想借钱去字符串子串：
+
+```rust
+fn main() {
+    let s = String::from("EN中文");
+    let sub = &s[0..2];
+    println!("{}", sub);
+}
+```
+
+运行结果：
+> EN
+
+但是请注意此用法有可能肢解一个`UTF-8`字符！那样会报错：
+
+```rust
+fn main() {
+    let s = String::from("EN中文");
+    let sub = &s[0..3];
+    println!("{}", sub);
+}
+```
+
+运行结果：
+> thread 'main' panicked at 'byte index 3 is not a char boundary; it is inside '中' (bytes 2..5) of `EN中文`', src\main.rs:3:16  
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+### 映射表
+
+映射表（Map）在其他语言中广泛存在。其中应用最普遍的就是键值散列映射表（Hash Map）。  
+新建一个散列键值映射表：
+
+```rust
+use std::collections::HashMap;
+
+fn main() {
+    let mut map = HashMap::new();
+
+    map.insert("color", "red");
+    map.insert("size", "10 m^2");
+
+    println!("{}", map.get("color").unwrap());
+}
+```
+
+**注意：** 这里没有声明散列表的泛型，是因为Rust的自动判断类型机制。  
+运行结果：
+> red
+
+`insert`方法和`get`方法是映射表最常用的两个方法。  
+映射表支持迭代器：
+
+```rust
+use std::collections::HashMap;
+
+fn main() {
+    let mut map = HashMap::new();
+
+    map.insert("color", "red");
+    map.insert("size", "10 m^2");
+
+    for p in map.iter() {
+        println!("{:?}", p);
+    }
+}
+```
+
+运行结果：
+> ("size", "10 m^2")
+("color", "red")
+
+迭代元素是表示键值对的元组。  
+Rust的映射表是十分方便的数据结构，当使用`insert`方法添加新的键值对的时候，如果已经存在相同的键，会直接覆盖对应的值。如果你想“安全地插入”，就是在确定当前不存在某个键时才执行插入动作，可以这样：
+
+```rust
+map.entry("color").or_insert("red");
+```
+
+这句话的意思是如果没有键为“color”的键值对就添加它并设定值为“red”，否则就跳过。  
+在已经确定有某个键的情况下如果想直接修改对应的值，有更快的方法：
+
+```rust
+use std::collections::HashMap;
+
+fn main() {
+    let mut map = HashMap::new();
+
+    map.insert(1, "a");
+
+    if let Some(x) = map.get_mut(&1) {
+        *x = "b";
+    }
+
+    println!("{:?}", map.get(&1));
+}
+```
+
+运行结果：
+> Some("b")
+
+## Rust面向对象
+
+面向对象的编程语言通常实现了数据的封装与继承并能基于数据调用方法。  
+Rust不是面向对象的编程语言，但这些功能都得以实现。  
+
+### 封装
+
+封装就是对外显示的策略，在Rust中可以通过模块的机制来实现最外层的封装，并且每一个Rust文件都可以看作一个模块，模块内的元素可以通过`pub`关键字对外明示。  
+“类”往往是面向对象的编程语言中常用到的概念。“类”封装的是数据，是对同一类数据实体以及其处理方法的抽象。在Rust中，可以使用结构体或枚举类来实现类的功能：  
+
+```rust
+pub struct ClassName {
+    pub field: Type,
+}
+
+pub impl ClassName {
+    fn some_method(&self) {
+        // 方法函数体
+    }
+}
+
+pub enum EnumName {
+    A,
+    B,
+}
+
+pub impl EnumName {
+    fn some_method(&self) {
+        
+    }
+}
+```
+
+下面建造一个完整的类：
+
+```rust
+// second.rs
+pub struct ClassName {
+    field: i32,
+}
+
+impl ClassName {
+    pub fn new(value: i32) -> ClassName {
+        ClassName {
+            field: value
+        }
+    }
+
+    pub fn public_method(&self) {
+        println!("from public method");
+        self.private_method();
+    }
+
+    fn private_method(&self) {
+        println!("from private method");
+    }
+}
+//main.rs
+mod second;
+use second::ClassName;
+
+fn main() {
+    let object = ClassName::new(1024);
+    object.public_method();
+}
+```
+
+运行结果：
+> from public method  
+from private method
+
+### 继承
+
+几乎其他的面向对象的编程语言都可以实现“继承”，并用“extend”词语来描述这个动作。  
+继承是多态（Polymorphism）思想的实现，多态指的是编程语言可以处理多种类型数据的代码。在Rust中，通过特性（trait）实现多态。但是特性无法实现属性的继承，只能实现类似于“接口”的功能，所以想继承一个类的方法最好在“子类”中定义“父类”的实例。  
+总的来说，Rust没有提供跟继承有关的语法糖，也没有官方的继承手段（完全等同于Java中的类的继承），但灵活的语法依然可以实现相关的功能。
+
+## Rust并发编程
+
+安全高效的处理`并发`是Rust诞生的目的之一，主要解决的是服务器高负载承受能力。  
+`并发`（concurrent）的概念是指程序不同的部分独立执行，这于`并行`（parallel）的概念容易混淆，并行强调的是“同时执行”。  
+`并发`往往会造成`并行`。  
+
+### 线程
+
+`线程`（thread）是一个程序中独立运行的一个部分。  
+`线程`不同于`进程`（process）的地方是线程是程序以内的概念，程序往往是在一个`进程`中执行的。  
+在有操作系统的环境中进程往往被交替地调度得以执行，`线程`则在进程以内由程序进行调度。  
+由于线程并发很有可能出现并行的情况，所以在并行中可能遇到的`死锁`、`延宕错误`常出现于含有并发机制的程序。  
+为了解决这些问题，很多其它语言（如Java、C#）采用特殊的运行时（runtime）软件协调资源，但这样无疑极大地降低了程序的执行效率。  
+C/C++语言在操作系统的最底层也支持`多线程`，且语言本身以及其编译器不具备侦查和避免并行错误的能力，这对于开发者来说压力无疑很大，开发者需要花费大量的精力避免发生错误。  
+Rust不依靠运行时环境，这一点跟C/C++一样。  
+但Rust在语言本身就设计了包括`所有权`机制在内的手段来尽可能地把最常见的错误消灭在编译阶段，这一点其他语言不具备。  
+但这不意味着我们编译的时候可以不小心，迄今为止由于`并发`造成的问题还没有在公共范围内得到完全解决，仍有可能出现错误，`并发`编程时要尽量小心！  
+Rust中通过`std::thread::spawn`函数创建新进程：
+
+```rust
+use std::thread;
+use std::time::Duration;
+
+fn spawn_function() {
+    for i in 0..5 {
+        println!("spawned thread print {}", i);
+        thread::sleep(Duration::from_millis(1));
+    }
+}
+
+fn main() {
+    thread::spawn(spawn_function);
+
+    for i in 0..3 {
+        println!("main thread print {}", i);
+        thread::sleep(Duration::from_millis(1));
+    }
+}
+```
+
+运行结果：
+>main thread print 0  
+spawned thread print 0  
+main thread print 1  
+spawned thread print 1  
+spawned thread print 2  
+main thread print 2  
+spawned thread print 3
+
+这个结果在某些情况下顺序有可能变化，但总体上是这样打印出来的。  
+此程序有一个子线程，目的是打印5行文字，主线程打印三行文字，但很显然随着主线程的结束，spawn线程也随之结束了，并没有完成所有打印。  
+`std::thread::spawn`函数的参数是一个无参函数，但上述写法不是推荐的写法，可以使用`闭包`（closures）来传递函数作为参数：
+
+```rust
+use std::thread;
+use std::time::Duration;
+
+fn main() {
+    thread::spawn(|| {
+        for i in 0..5 {
+            println!("spawned thread print {}", i);
+            thread::sleep(Duration::from_millis(1));
+        }
+    });
+
+    for i in 0..3 {
+        println!("main thread print {}", i);
+        thread::sleep(Duration::from_millis(1));
+    }
+}
+```
+
+闭包是可以保存进变量或者作为参数传递给其他函数的匿名函数。闭包相当于Rust中的`Lambda`表达式，格式如下：
+
+```rust
+|参数1, 参数2, ...| -> 返回值类型 {
+    // 函数体
+}
+```
+
+例如：
+
+```rust
+fn main() {
+    let inc = |num: i32| -> i32 {
+        num + 1
+    };
+    println!("inc(5) = {}", inc(5));
+}
+```
+
+运行结果：
+> inc(5) = 6
+
+闭包可以省略类型声明使用Rust自动类型判断机制：
+
+```rust
+fn main() {
+    let inc = |num| {
+        num + 1
+    };
+    println!("inc(5) = {}", inc(5));
+}
+```
+
+结果没有任何变化。
+
+### join方法
+
+```rust
+use std::thread;
+use std::time::Duration;
+
+fn main() {
+    let handle = thread::spawn(|| {
+        for i in 0..5 {
+            println!("spawned thread print {}", i);
+            thread::sleep(Duration::from_millis(1));
+        }
+    });
+
+    for i in 0..3 {
+        println!("main thread print {}", i);
+        thread::sleep(Duration::from_millis(1));
+    }
+
+    handle.join().unwrap();
+}
+```
+
+运行结果：
+> main thread print 0  
+spawned thread print 0  
+spawned thread print 1  
+main thread print 1  
+main thread print 2  
+spawned thread print 2  
+spawned thread print 3  
+spawned thread print 4
+
+### move强制所有权迁移
+
+这是一个经典遇到的情况：
+
+```rust
+use std::thread;
+
+fn main() {
+    let s = "hello";
+
+    let handle = thread::spawn(|| {
+        println!("{}", s)
+    });
+
+    handle.join().unwrap();
+}
+```
+
+在子线程中尝试使用当前函数的资源，这一定是错误的！因为所有权机制禁止这种危险情况的产生，它将破坏所有权机制销毁资源的一定性。可以使用`闭包`的`move`关键字来处理：
+
+```rust
+use std::thread;
+
+fn main() {
+    let s = "hello";
+
+    let handle = thread::spawn(move || {
+        println!("{}", s)
+    });
+
+    handle.join().unwrap();
+}
+```
+
+### 消息传递
+
+Rust中一个实现消息传递并发的主要工具是`通道`（channel），通道有两部分组成，一个`发送者`（transmitter）和一个`接收者`（receiver）。  
+`std::sync::mpsc`包含了消息传递的方法：
+
+```rust
+use std::thread;
+use std::sync::mpsc;
+
+fn main() {
+    let (tx, rx) = mpsc::channel();
+
+    thread::spawn(move || {
+        let val = String::from("hi");
+        tx.send(val).unwrap();
+    });
+
+    let received = rx.recv().unwrap();
+    println!("Got: {}", received);
+}
+```
+
+运行结果：
+> Got: hi
+
+子线程获得了主线程的发送者`tx`，并调用了它的`send`方法发送了一个字符串，然后主线程就通过对应的接收者`rx`接收到了。
