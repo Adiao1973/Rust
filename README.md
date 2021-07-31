@@ -1,5 +1,91 @@
 # Rust学习之路
 
+- [Rust学习之路](#rust学习之路)
+  - [Rust输出到命令行](#rust输出到命令行)
+  - [Rust基础语法](#rust基础语法)
+    - [变量](#变量)
+    - [常量与不可变变量的区别](#常量与不可变变量的区别)
+    - [重影](#重影)
+  - [Rust数据类型](#rust数据类型)
+    - [整数型（Integer）](#整数型integer)
+    - [浮点数型（Floating-Point）](#浮点数型floating-point)
+    - [数学运算](#数学运算)
+    - [布尔型](#布尔型)
+    - [字符型](#字符型)
+    - [复合类型](#复合类型)
+  - [Rust注释](#rust注释)
+  - [用于说明文档的注释](#用于说明文档的注释)
+  - [Rust函数](#rust函数)
+    - [函数参数](#函数参数)
+    - [函数体的语句和表达式](#函数体的语句和表达式)
+    - [函数返回值](#函数返回值)
+  - [Rust条件语句](#rust条件语句)
+  - [Rust循环](#rust循环)
+    - [while循环](#while循环)
+    - [for循环](#for循环)
+    - [loop循环](#loop循环)
+  - [Rust所有权](#rust所有权)
+    - [所有权规则](#所有权规则)
+    - [变量范围](#变量范围)
+    - [内存与分配](#内存与分配)
+    - [变量与数据交互的方式](#变量与数据交互的方式)
+    - [移动](#移动)
+    - [克隆](#克隆)
+    - [涉及函数传参的所有权机制](#涉及函数传参的所有权机制)
+    - [函数返回值的所有权机制](#函数返回值的所有权机制)
+    - [引用与租借](#引用与租借)
+    - [垂悬引用（Dangling References）](#垂悬引用dangling-references)
+  - [Rust Slice（切片）类型](#rust-slice切片类型)
+    - [字符串切片](#字符串切片)
+    - [非字符串切片](#非字符串切片)
+  - [Rust结构体](#rust结构体)
+    - [结构体定义](#结构体定义)
+    - [结构体实例](#结构体实例)
+    - [元组结构体](#元组结构体)
+    - [结构体所有权](#结构体所有权)
+      - [输出结构体](#输出结构体)
+      - [结构体方法](#结构体方法)
+    - [结构体关联函数](#结构体关联函数)
+      - [单元结构体](#单元结构体)
+  - [Ruct枚举类](#ruct枚举类)
+    - [match语法](#match语法)
+    - [Option枚举类](#option枚举类)
+    - [if let 语法](#if-let-语法)
+  - [Rust组织管理](#rust组织管理)
+    - [箱（Crate）](#箱crate)
+    - [包（Package）](#包package)
+    - [模块 （Moudle）](#模块-moudle)
+    - [访问权限](#访问权限)
+    - [难以发现的模块](#难以发现的模块)
+    - [use关键字](#use关键字)
+    - [引用标准库](#引用标准库)
+  - [错误处理](#错误处理)
+    - [不可恢复错误](#不可恢复错误)
+    - [可恢复的错误](#可恢复的错误)
+    - [可恢复的错误的传递](#可恢复的错误的传递)
+    - [kind方法](#kind方法)
+  - [Rust泛型与特性](#rust泛型与特性)
+    - [在函数中定义泛型](#在函数中定义泛型)
+    - [结构体和枚举类中的泛型](#结构体和枚举类中的泛型)
+    - [特性](#特性)
+    - [默认特性](#默认特性)
+    - [特性做参数](#特性做参数)
+    - [特性做返回值](#特性做返回值)
+    - [有条件实现方法](#有条件实现方法)
+  - [Rust生命周期](#rust生命周期)
+    - [生命周期注释](#生命周期注释)
+    - [结构体中使用字符串切片引用](#结构体中使用字符串切片引用)
+    - [静态生命周期](#静态生命周期)
+    - [泛型、特性与生命周期协同作战](#泛型特性与生命周期协同作战)
+  - [Rust文件与IO](#rust文件与io)
+    - [接收命令行参数](#接收命令行参数)
+    - [命令行输入](#命令行输入)
+    - [文件读取](#文件读取)
+    - [文件写入](#文件写入)
+  - [Rust集合与字符串](#rust集合与字符串)
+    - [向量](#向量)
+    - [字符串](#字符串)
+
 ## Rust输出到命令行
 
 * Rust输出到文字的方式主要有两种: `pirntln!()` 和 `print!()`
@@ -2587,3 +2673,228 @@ fn main() {
 `std::fs`模块中的`File`类是描述文件的类，可以用于打开文件，再打开文件之后，我们可以使用`File`的`read`方法按流读取文件的下面一些字节到缓冲区（缓冲区是一个`u8`数组），读取的字节数等于缓冲区的长度。  
 **注意：** VSCode目前还不具备自动添加标准库引用的功能，所以有时出现“函数或方法不存在”一样的错误有可能是标准库引用的问题。可以查看标准库的注释文档（鼠标放到上面会出现）来手动添加标准库。  
 `std::fs::File`的`open`方法是“只读”打开文件，并且没有配套的`close`方法，因为Rust编译器可以在文件不再被使用时自动关闭文件。
+
+### 文件写入
+
+文件写入分为一次性写入和流式写入。流式写入需要打开文件，打开方式有“新建”（create）和“追加”（append）两种。  
+一次性写入：
+
+```rust
+use std::fs;
+
+fn main() {
+    fs::write("E:\\text.txt", "FROM RUST PROGRAM").unwrap();
+}
+```
+
+这和一次性读取一样简单方便。执行程序之后，`E:\text.txt`文件的内容将会被重写为`FROM RUST PROGRAM`。所以，一次性写入请谨慎使用！因为它会直接删除文件内容（无论文件多么大）。如果文件不存在则会创建文件。  
+如果想使用流的方式写入文件内容，可以使用`std::fs::File`的`create`方法：
+
+```rust
+use std::io::prelude::*;
+use std::fs::File;
+
+fn main() {
+    let mut file = File::create("E:\\text.txt").unwrap();
+    file.write(b"FROM RUST PROGRAM").unwrap();
+}
+```
+
+这段程序与上一个程序等价。  
+**注意：** 打开的文件一定存放在可变的变量中才能使用`File`的方法！  
+`File`类中不存在`append`静态方法，但是可以使用`OpenOptions`来实现用特定方法打开文件：
+
+```rust
+use std::io::prelude::*;
+use std::fs::OpenOptions;
+
+fn main() -> std::io::Result<()> {
+    let mut file = OpenOptions::new().append(true).open("E:\\text.txt")?;
+
+    file.write(b" APPEND WORD")?;
+
+    Ok(())
+}
+```
+
+运行之后，`E:\\text.txt`文件内容将变成：
+> FROM RUST PROGRAM APPEND WORD
+
+`OpenOption`是一个灵活的打开文件的方法，它可以设置打开权限，除`append`权限以外还有`read`权限和`write`权限，如果想以读写权限打开一个文件可以这样写：
+
+```rust
+use std::io::prelude::*;
+use std::fs::OpenOptions;
+
+fn main() -> std::io::Result<()> {
+    let mut file = OpenOptions::new().read(true).write(true).open("E:\\text.txt")?;
+
+    file.write(b"COVER")?;
+
+    Ok(())
+}
+```
+
+运行之后，`E:\text.txt`文件内容将变成：
+> COVERRUST PROGRAM APPEND WORD
+
+## Rust集合与字符串
+
+集合（Collection）是数据结构中最普遍的数据存放形式，Rust标准库中提供了丰富的集合类型帮助开发者处理数据结构的操作。  
+
+### 向量
+
+向量（Vector）是一个存放多值的单数据结构，该结构将相同类型的值线性的存放在内存中。  
+向量是线性表，在Rust中表示的是`Vec<T>`。  
+向量的使用方式类似于列表（List），可以通过这种方式创建指定类型的向量：  
+
+```rust
+let vector: Vec<i32> = Vec::new(); // 创建类型为i32的空向量
+let vector = vec![1, 2, 4, 8]; // 通过数组创建向量
+```
+
+使用线性表常常会用到追加的操作，但是追加和栈的`push`操作本质是一样的，所以向量只有`push`方法来追加单个元素：
+
+```rust
+fn main() {
+    let mut vector = vec![1, 2, 4, 8];
+    vector.push(16);
+    vector.push(32);
+    vector.push(64);
+    println!("{:?}", vector)
+}
+```
+
+运行结果：
+> [1, 2, 4, 8, 16, 32, 64]
+
+get方法用于取出向量中的值：
+
+```rust
+fn main() {
+    let mut v =vec![1, 2, 4, 8];
+    println!("{}", match v.get(0) {
+        Some(value) => value.to_string(),
+        None => "None".to_string()
+    });
+}
+```
+
+运行结果：
+> 1
+
+因为向量的长度无法从逻辑上推断，`get`方法无法保证一定取到值，所以`get`方法的返回值是`Option`枚举类，有可能为空。  
+这是一种安全的取值方法，但是书写起来有些麻烦。如果你能够保证取值的下标不会超出向量下标取值范围，你也可以使用数组取值的语法：
+
+```rust
+fn main() {
+    let v = vec![1, 2, 4, 8];
+    println!("{}", v[1]);
+}
+```
+
+运行结果：
+> 2
+
+但如果尝试获取`v[4]`，那么向量会返回错误。  
+遍历向量：
+
+```rust
+fn main() {
+    let v = vec![1, 2, 4, 8];
+    for i in &v {
+        println!("{}", i);
+    }
+}
+```
+
+运行结果：
+> 1  
+2  
+4  
+8
+
+### 字符串
+
+字符串类（String）到现在已经使用了很多。这里主要介绍字符串的方法和`UTF-8`性质。  
+新建字符串：  
+
+```rust
+let string = String::new();
+```
+
+基础类型转换成字符串：
+
+```rust
+let one = 1.to_string(); // 整数到字符串
+let float = 1.3.to_string(); // 浮点数到字符串
+let slice = "slice".to_string(); // 字符串切片到字符串
+```
+
+包含`UTF-8`字符的字符串：
+
+```rust
+let hello = String::from("السلام عليكم");
+let hello = String::from("Dobrý den");
+let hello = String::from("Hello");
+let hello = String::from("שָׁלוֹם");
+let hello = String::from("नमस्ते");
+let hello = String::from("こんにちは");
+let hello = String::from("안녕하세요");
+let hello = String::from("你好");
+let hello = String::from("Olá");
+let hello = String::from("Здравствуйте");
+let hello = String::from("Hola");
+```
+
+字符串追加：
+
+```rust
+let mut s = String::from("run");
+ss.push_str("zm"); // 追加字符串切片
+s.push('!');  // 追加字符
+```
+
+用`+`号拼接字符串：
+
+```rust
+let s1 = String::from("Hello, ");
+let s2 = String::from("world!");
+let s3 = s1 + &s2;
+```
+
+这个语法也可以包含字符串切片：
+
+```rust
+let s1 = String::from("tic");
+let s2 = String::from("tac");
+let s3 = String::from("toe");
+
+let s = s1 + "-" + &s2 + "-" + &s3;
+```
+
+使用`format!`宏：
+
+```rust
+let s1 = String::from("tic");
+let s2 = String::from("tac");
+let s3 = String::from("toe");
+
+let s = format!("{}-{}-{}", s1, s2, s3);
+```
+
+字符串长度：
+
+```rust
+let s = "hello";
+let len = s.len();
+```
+
+这里`len`的值是5。
+
+```rust
+let s = "你好";
+let len = s.len();
+```
+
+这里`len`的值是6。因为
