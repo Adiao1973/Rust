@@ -1,14 +1,16 @@
-use std::thread;
-use std::sync::mpsc;
+#![feature(core_intrinsics)]
 
 fn main() {
-    let (tx, rx) = mpsc::channel();
+    let x = &false;
+    print_type_name_of(x);
 
-    thread::spawn(move || {
-        let val = String::from("hi");
-        tx.send(val).unwrap();
-    });
+    let &x = &false;
+    print_type_name_of(x);
 
-    let received = rx.recv().unwrap();
-    println!("Got: {}", received);
+    let ref x = &false;
+    print_type_name_of(x);
+}
+
+fn print_type_name_of<T>(_: T) {
+    println!("{}", unsafe { std::intrinsics::type_name::<T>() })
 }

@@ -34,6 +34,7 @@
     - [涉及函数传参的所有权机制](#涉及函数传参的所有权机制)
     - [函数返回值的所有权机制](#函数返回值的所有权机制)
     - [引用与租借](#引用与租借)
+    - [Rust中的ref与&](#rust中的ref与)
     - [垂悬引用（Dangling References）](#垂悬引用dangling-references)
   - [Rust Slice（切片）类型](#rust-slice切片类型)
     - [字符串切片](#字符串切片)
@@ -1005,6 +1006,98 @@ fn main(){
 这段程序不正确，因为多重可变引用了s。  
 Rust对可变引用的这种设计主要出于对并发状态下发送数据访问碰撞的考虑，在编译阶段就避免了这种事情的发送。  
 由于发生数据访问碰撞的必要条件之一就是数据被至少一个使用者写且同时被至少一个其他使用者读或写，所以在一个值被可变引用时不允许再次被任何引用。
+
+### Rust中的ref与&
+
+- 首先证明`ref`（引用）是否可以为空
+  
+```rust
+fn main() {
+    let ref a: i32;
+    // a = 1; // expected '&i32',found integer
+    a = &1;
+}
+```
+
+这段程序能编译通过，说明Rust中的`ref`引用和C++中的`typedef`（引用）不是一个意思，更像是c++中的`指针`（Point）类型。C++通过`int *a`来声明指针类型。
+
+- `ref`与`&`的区别
+
+```rust
+let ref a = 2;
+let a = &2;
+```
+
+两个值都是`&i32`类型。  
+所以`ref`用在变量绑定与`&`用在表达式上是一样的效果。  
+根据上一个例子，可以把`&`看作是Rust表达式的借用，这与C++取地址符`&`是一个意思。  
+
+```rust
+struct B<'a> {
+    pub a: &'a u32,
+    // pub b: ref u32, expected type, found keyword 'ref'
+}
+fn main() {
+    let ref a = &1;
+    let b = B {a: a};
+}
+```
+
+在类型声明上，`&`表示引用类型。`ref`不允许修饰类型声明。
+
+- `&`与`*`的关系
+  
+那么`&`用在绑定上是怎么样的？其实`&`用在绑定上与`*`（解除引用符）用在表达式上是一样的：
+
+```rust
+let r = &1;
+let &a = r;
+let a = *r;
+```
+
+两个值都是`i32`类型。  
+现在通过代码直接输出具体类型，加深理解。
+
+```rust
+#![feature(core_intrinsics)]
+
+fn main() {
+    let x = &false;
+    print_type_name_of(x);
+
+    let &x = &false;
+    print_type_name_of(x);
+
+    let ref x = &false;
+    print_type_name_of(x);
+}
+
+fn print_type_name_of<T>(_: T) {
+    println!("{}", unsafe { std::intrinsics::type_name::<T>() })
+}
+```
+
+运行结果：
+> &bool  
+bool  
+&&bool
+
+- `match`的模式匹配上只能使用`ref`,在函数声明上只能使用`&`来表示引用类型
+
+**总结：**  
+我们在不同情况下解释`&`的意思：  
+
+1. 在表达式上，表示的是借用。
+2. 在变量绑定上，表示解地址操作与`*`类似。
+3. 在类型声明上，表示引用类型。
+4. 在模式匹配上，无效关键字
+
+`ref`的通用解释是：
+
+1. 在表达式上，无效关键字。
+2. 在变量绑定上，表示引用类型。
+3. 在类型声明上，无效关键字。
+4. 在模式匹配上，表示引用类型。
 
 ### 垂悬引用（Dangling References）
 
