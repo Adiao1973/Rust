@@ -1,16 +1,8 @@
-#![feature(core_intrinsics)]
+use std::cell::RefCell;
 
 fn main() {
-    let x = &false;
-    print_type_name_of(x);
-
-    let &x = &false;
-    print_type_name_of(x);
-
-    let ref x = &false;
-    print_type_name_of(x);
-}
-
-fn print_type_name_of<T>(_: T) {
-    println!("{}", unsafe { std::intrinsics::type_name::<T>() })
+    let x = RefCell::new(vec![1, 2, 3]);
+    println!("{:?}", x.borrow());
+    x.borrow_mut().push(5);
+    println!("{:?}", x.borrow());
 }
