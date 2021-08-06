@@ -114,7 +114,7 @@
 ```rust
 fn mian(){
     let a = 12;
-    println!("a si {}", a);
+    println!("a is {}", a);
 }
 ```
 
